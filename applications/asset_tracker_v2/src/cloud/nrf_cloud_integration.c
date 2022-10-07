@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
 #include <zephyr/kernel.h>
 #include <net/nrf_cloud.h>
 #include <zephyr/net/mqtt.h>
@@ -123,7 +129,7 @@ static int send_service_info(void)
 		.modem_full = nrf_cloud_fota_is_type_enabled(NRF_CLOUD_FOTA_MODEM_FULL)
 	};
 	struct nrf_cloud_svc_info_ui ui_info = {
-		.gps = true,
+		.gnss = true,
 #if defined(CONFIG_BOARD_THINGY91_NRF9160_NS)
 		.humidity = true,
 		.air_pressure = true,

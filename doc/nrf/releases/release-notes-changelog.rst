@@ -120,6 +120,7 @@ nRF9160: Serial LTE modem
 * Updated:
 
   * Removed automatic quit of data mode in GNSS, FTP and HTTP services.
+  * Service info JSON payload now uses ``GNSS`` instead of ``GPS``.
 
 nRF5340 Audio
 -------------
@@ -325,6 +326,10 @@ Libraries for networking
 
   * Updated the library so that it does not retry download on disconnect.
   * Fixed a race condition when starting the download.
+
+* :ref:`nrf_cloud` library:
+
+  * Updated UI service info and sensor type strings to refer to ``GNSS`` instead of ``GPS``.
 
 Libraries for NFC
 -----------------

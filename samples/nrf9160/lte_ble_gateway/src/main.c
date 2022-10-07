@@ -443,7 +443,7 @@ static void cloud_connect(struct k_work *work)
 	}
 
 	const enum nrf_cloud_sensor supported_sensors[] = {
-		NRF_CLOUD_SENSOR_GPS, NRF_CLOUD_SENSOR_FLIP
+		NRF_CLOUD_SENSOR_GNSS, NRF_CLOUD_SENSOR_FLIP
 	};
 
 	const struct nrf_cloud_sensor_list sensor_list = {
