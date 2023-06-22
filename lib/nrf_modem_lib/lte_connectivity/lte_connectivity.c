@@ -48,7 +48,7 @@ static struct net_if *iface_bound;
 /* Container and protection mutex for internal state of the connectivity binding. */
 K_MUTEX_DEFINE(internal_state_lock);
 static struct lte_connectivity_state internal_state = {
-	.if_down_setting = LTE_CONNECTIVITY_IF_DOWN_MODEM_SHUTDOWN
+	.if_down_setting = ATOMIC_INIT(LTE_CONNECTIVITY_IF_DOWN_MODEM_SHUTDOWN)
 };
 
 /* Local functions */
@@ -114,11 +114,17 @@ static void become_dormant(void)
  */
 static void update_connectivity(bool has_pdn, bool has_cell)
 {
-	bool had_connectivity = internal_state.has_pdn && internal_state.has_cell;
+	bool had_connectivity = atomic_get(&(internal_state.has_pdn)) &&
+				atomic_get(&(internal_state.has_cell));
 	bool has_connectivity = has_pdn && has_cell;
 
-	internal_state.has_pdn = has_pdn;
-	internal_state.has_cell = has_cell;
+	/* The use of atomic_set here does not guarantee thread-safety.
+	 * This call must still lock the internal state mutex.
+	 * atomic_set is required since the internal state struct uses atomic_t to allow
+	 * mutexless thread-safe single-value read
+	 */
+	atomic_set(&(internal_state.has_pdn), has_pdn);
+	atomic_set(&(internal_state.has_cell), has_cell);
 
 	if (had_connectivity != has_connectivity) {
 		if (has_connectivity) {
@@ -133,14 +139,14 @@ static void update_has_pdn(bool has_pdn)
 {
 	(void)k_mutex_lock(&internal_state_lock, K_FOREVER);
 
-	if (has_pdn != internal_state.has_pdn) {
+	if (has_pdn != atomic_get(&(internal_state.has_pdn))) {
 		if (has_pdn) {
 			LOG_DBG("Gained PDN bearer");
 		} else {
 			LOG_DBG("Lost PDN bearer");
 		}
 
-		update_connectivity(has_pdn, internal_state.has_cell);
+		update_connectivity(has_pdn, atomic_get(&(internal_state.has_cell)));
 	}
 
 	(void)k_mutex_unlock(&internal_state_lock);
@@ -150,14 +156,14 @@ static void update_has_cell(bool has_cell)
 {
 	(void)k_mutex_lock(&internal_state_lock, K_FOREVER);
 
-	if (has_cell != internal_state.has_cell) {
+	if (has_cell != atomic_get(&(internal_state.has_cell))) {
 		if (has_cell) {
 			LOG_DBG("Gained serving cell");
 		} else {
 			LOG_DBG("Lost serving cell");
 		}
 
-		update_connectivity(internal_state.has_pdn, has_cell);
+		update_connectivity(atomic_get(&(internal_state.has_pdn)), has_cell);
 	}
 
 	(void)k_mutex_unlock(&internal_state_lock);
@@ -457,13 +463,8 @@ int lte_connectivity_disable(void)
 {
 	int ret;
 
-	enum lte_connectivity_if_down_options if_down_setting;
-
-	(void)k_mutex_lock(&internal_state_lock, K_FOREVER);
-
-	if_down_setting = internal_state.if_down_setting;
-
-	(void)k_mutex_unlock(&internal_state_lock);
+	enum lte_connectivity_if_down_options if_down_setting =
+		atomic_get(&(internal_state.if_down_setting));
 
 	if (if_down_setting == LTE_CONNECTIVITY_IF_DOWN_MODEM_SHUTDOWN) {
 		ret = nrf_modem_lib_shutdown();
@@ -538,11 +539,7 @@ int lte_connectivity_options_set(struct conn_mgr_conn_binding *const if_conn, in
 
 		if_down_setting = *((uint8_t *)value);
 
-		(void)k_mutex_lock(&internal_state_lock, K_FOREVER);
-
-		internal_state.if_down_setting = if_down_setting;
-
-		(void)k_mutex_unlock(&internal_state_lock);
+		atomic_set(&(internal_state.if_down_setting), if_down_setting);
 
 		switch (if_down_setting) {
 		case LTE_CONNECTIVITY_IF_DOWN_MODEM_SHUTDOWN:
@@ -578,11 +575,8 @@ int lte_connectivity_options_get(struct conn_mgr_conn_binding *const if_conn, in
 
 		*length = sizeof(*if_down_setting_out);
 
-		(void)k_mutex_lock(&internal_state_lock, K_FOREVER);
+		*if_down_setting_out = (uint8_t)atomic_get(&(internal_state.if_down_setting));
 
-		*if_down_setting_out = (uint8_t) internal_state.if_down_setting;
-
-		(void)k_mutex_unlock(&internal_state_lock);
 		break;
 	}
 	default:

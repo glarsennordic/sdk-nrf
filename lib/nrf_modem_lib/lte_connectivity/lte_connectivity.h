@@ -45,13 +45,13 @@ enum lte_connectivity_options {
 
 struct lte_connectivity_state {
 	/* Tracks the requested behavior when the network interface is brought down. */
-	enum lte_connectivity_if_down_options if_down_setting;
+	atomic_t if_down_setting;
 
 	/* Tracks whether a PDN bearer is currently active. */
-	bool has_pdn;
+	atomic_t has_pdn;
 
 	/* Tracks whether a serving cell is currently or was recently available. */
-	bool has_cell;
+	atomic_t has_cell;
 };
 
 /** @brief Macro used to define a private Connection Manager connectivity context type.
