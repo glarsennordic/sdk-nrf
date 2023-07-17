@@ -21,12 +21,12 @@ K_THREAD_DEFINE(led_thread, CONFIG_LED_THREAD_STACK_SIZE, led_animation_thread_f
 #endif
 
 /* Define, and automatically start the main application thread. See application.c */
-K_THREAD_DEFINE(app_thread, CONFIG_APPLICATION_THREAD_STACK_SIZE, main_application_thread_fn,
-		NULL, NULL, NULL, 0, 0, 0);
+//K_THREAD_DEFINE(app_thread, CONFIG_APPLICATION_THREAD_STACK_SIZE, main_application_thread_fn,
+//		NULL, NULL, NULL, 0, 0, 0);
 
 /* Define, and automatically start the message queue thread. See connection.c */
-K_THREAD_DEFINE(msg_thread, CONFIG_MESSAGE_THREAD_STACK_SIZE, message_queue_thread_fn,
-		NULL, NULL, NULL, 0, 0, 0);
+//K_THREAD_DEFINE(msg_thread, CONFIG_MESSAGE_THREAD_STACK_SIZE, message_queue_thread_fn,
+//		NULL, NULL, NULL, 0, 0, 0);
 
 /* Define, and automatically start the connection management thread. See connection.c
  *
@@ -36,15 +36,37 @@ K_THREAD_DEFINE(msg_thread, CONFIG_MESSAGE_THREAD_STACK_SIZE, message_queue_thre
  * Priority -1 is also a non-preeemptible priority level, so other threads, even of higher
  * priority, cannot interrupt the connection thread until it yields.
  */
-K_THREAD_DEFINE(con_thread, CONFIG_CONNECTION_THREAD_STACK_SIZE, connection_management_thread_fn,
-		NULL, NULL, NULL, -1, 0, 0);
+//K_THREAD_DEFINE(con_thread, CONFIG_CONNECTION_THREAD_STACK_SIZE, connection_management_thread_fn,
+//		NULL, NULL, NULL, -1, 0, 0);
 
-/* main() is called from the main thread, which defaults to priority zero,
- * but for illustrative purposes we don't use it. main_application() could be called directly
- * from this function, rather than given its own dedicated thread.
- */
+struct demonstration {
+	int oh_no;
+};
+
+void test_func(int somevalue)
+{
+	printk("Am I executed? (1) \n");
+
+	printk("I was passed %d \n", somevalue);
+
+	printk("Am I executed? (2) \n");
+}
+
+void demo_crash(void)
+{
+	k_sleep(K_SECONDS(5));
+
+	printk("I am about to purposefully crash!\n");
+
+	struct demonstration *demo = NULL;
+
+	test_func(demo->oh_no);
+
+	printk("Am I executed? (3) \n");
+}
+
 int main(void)
 {
-	LOG_INF("nRF Cloud MQTT multi-service sample has started, version: %s", CONFIG_APP_VERSION);
+	demo_crash();
 	return 0;
 }

@@ -235,8 +235,35 @@ static void location_gnss_periodic_get(void)
 	}
 }
 
+struct demonstration {
+	int oh_no;
+};
+
+void test_func(int somevalue)
+{
+	printk("Am I executed? (1) \n");
+
+	printk("I was passed %d \n", somevalue);
+
+	printk("Am I executed? (2) \n");
+}
+
+void demo_crash(void)
+{
+	k_sleep(K_SECONDS(5));
+
+	printk("I am about to purposefully crash!\n");
+
+	struct demonstration *demo = NULL;
+
+	test_func(demo->oh_no);
+
+	printk("Am I executed? (3) \n");
+}
+
 int main(void)
 {
+	demo_crash();
 	int err;
 
 	printk("Location sample started\n\n");
