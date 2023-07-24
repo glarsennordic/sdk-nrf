@@ -11,7 +11,7 @@
 #include "message_queue.h"
 #include "led_control.h"
 
-LOG_MODULE_REGISTER(main, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(main, CONFIG_MULTI_SERVICE_LOG_LEVEL);
 
 /* Here, we start the various threads that our application will run in */
 
@@ -39,6 +39,15 @@ K_THREAD_DEFINE(con_thread, CONFIG_CONNECTION_THREAD_STACK_SIZE, cloud_connectio
  */
 int main(void)
 {
-	LOG_INF("nRF Cloud MQTT multi-service sample has started, version: %s", CONFIG_APP_VERSION);
+	const char *protocol;
+
+	if (IS_ENABLED(CONFIG_NRF_CLOUD_MQTT)) {
+		protocol = "MQTT";
+	} else if (IS_ENABLED(CONFIG_NRF_CLOUD_COAP)) {
+		protocol = "CoAP";
+	}
+
+	LOG_INF("nRF Cloud %s Multi Service sample has started, version: %s",
+		protocol, CONFIG_APP_VERSION);
 	return 0;
 }

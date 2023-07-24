@@ -11,7 +11,7 @@
 
 #include "fota_support.h"
 
-LOG_MODULE_REGISTER(fota_support, CONFIG_MQTT_MULTI_SERVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(fota_support, CONFIG_MULTI_SERVICE_LOG_LEVEL);
 
 /* Called from nRF Cloud event handler in connection.c */
 void on_fota_downloaded(void)

@@ -13,7 +13,7 @@
  *	  Caller is no longer responsible for device message memory after function returns.
  * @return int - 0 on success, otherwise negative error.
  */
-int send_device_message(struct nrf_cloud_obj *const msg_obj);
+int send_device_message(struct nrf_cloud_sensor_data *const msg);
 
 /**
  * @brief The message queue thread function.
