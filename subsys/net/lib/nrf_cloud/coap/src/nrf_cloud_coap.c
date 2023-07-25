@@ -179,8 +179,58 @@ int nrf_cloud_coap_sensor_send(const char *app_id, double value, int64_t ts_ms)
 	}
 	err = nrf_cloud_coap_post("msg/d2c", NULL, buffer, len,
 				  COAP_CONTENT_FORMAT_APP_CBOR, false, NULL, NULL);
-	if (err) {
+	if (err < 0) {
 		LOG_ERR("Failed to send POST request: %d", err);
+	} else if (err > 0) {
+		LOG_RESULT_CODE_ERR("Error from server:", err);
+	}
+	return err;
+}
+
+int nrf_cloud_coap_message_send(const char *app_id, const char *message, bool json, int64_t ts_ms)
+{
+	if (!nrf_cloud_coap_is_connected()) {
+		return -EACCES;
+	}
+	int64_t ts = (ts_ms == NRF_CLOUD_NO_TIMESTAMP) ? get_ts() : ts_ms;
+	uint8_t buffer[256];
+	size_t len = sizeof(buffer);
+	int err;
+
+	err = coap_codec_message_encode(app_id, message, 0, 0, ts, buffer, &len,
+					json ? COAP_CONTENT_FORMAT_APP_JSON :
+					       COAP_CONTENT_FORMAT_APP_CBOR);
+	if (err) {
+		LOG_ERR("Unable to encode sensor data: %d", err);
+		return err;
+	}
+	err = nrf_cloud_coap_post("msg/d2c", NULL, buffer, len,
+				  json ? COAP_CONTENT_FORMAT_APP_JSON :
+				         COAP_CONTENT_FORMAT_APP_CBOR,
+				  false, NULL, NULL);
+	if (err < 0) {
+		LOG_ERR("Failed to send POST request: %d", err);
+	} else if (err > 0) {
+		LOG_RESULT_CODE_ERR("Error from server:", err);
+	}
+	return err;
+}
+
+int nrf_cloud_coap_json_message_send(const char *message)
+{
+	if (!nrf_cloud_coap_is_connected()) {
+		return -EACCES;
+	}
+	size_t len = strlen(message);
+	int err;
+
+	err = nrf_cloud_coap_post("msg/d2c", NULL, message, len,
+				  COAP_CONTENT_FORMAT_APP_JSON,
+				  false, NULL, NULL);
+	if (err < 0) {
+		LOG_ERR("Failed to send POST request: %d", err);
+	} else if (err > 0) {
+		LOG_RESULT_CODE_ERR("Error from server:", err);
 	}
 	return err;
 }
@@ -208,8 +258,10 @@ int nrf_cloud_coap_location_send(const struct nrf_cloud_gnss_data *gnss)
 	}
 	err = nrf_cloud_coap_post("msg/d2c", NULL, buffer, len,
 				  COAP_CONTENT_FORMAT_APP_CBOR, false, NULL, NULL);
-	if (err) {
+	if (err < 0) {
 		LOG_ERR("Failed to send POST request: %d", err);
+	} else if (err > 0) {
+		LOG_RESULT_CODE_ERR("Error from server:", err);
 	}
 	return err;
 }
@@ -237,7 +289,7 @@ int nrf_cloud_coap_location_get(struct nrf_cloud_rest_location_request const *co
 	if (!nrf_cloud_coap_is_connected()) {
 		return -EACCES;
 	}
-	static uint8_t buffer[256];
+	static uint8_t buffer[1024];
 	size_t len = sizeof(buffer);
 	int err;
 
@@ -390,14 +442,22 @@ int nrf_cloud_coap_shadow_get(char *buf, size_t buf_len, bool delta)
 
 int nrf_cloud_coap_shadow_state_update(const char * const shadow_json)
 {
+	int err;
+
 	__ASSERT_NO_MSG(shadow_json != NULL);
 	if (!nrf_cloud_coap_is_connected()) {
 		return -EACCES;
 	}
 
-	return nrf_cloud_coap_patch("state", NULL, (uint8_t *)shadow_json,
-				    strlen(shadow_json),
-				    COAP_CONTENT_FORMAT_APP_JSON, true, NULL, NULL);
+	err = nrf_cloud_coap_patch("state", NULL, (uint8_t *)shadow_json,
+				   strlen(shadow_json),
+				   COAP_CONTENT_FORMAT_APP_JSON, true, NULL, NULL);
+	if (err < 0) {
+		LOG_ERR("Failed to send PATCH request: %d", err);
+	} else if (err > 0) {
+		LOG_RESULT_CODE_ERR("Error from server:", err);
+	}
+	return err;
 }
 
 int nrf_cloud_coap_shadow_device_status_update(const struct nrf_cloud_device_status
