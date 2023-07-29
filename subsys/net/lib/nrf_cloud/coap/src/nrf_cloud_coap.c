@@ -160,6 +160,41 @@ int nrf_cloud_coap_pgps_url_get(struct nrf_cloud_rest_pgps_request const *const 
 }
 #endif /* CONFIG_NRF_CLOUD_PGPS */
 
+int nrf_cloud_coap_obj_send(struct nrf_cloud_obj *const obj)
+{
+	if (!nrf_cloud_coap_is_connected()) {
+		return -EACCES;
+	}
+
+	if (!obj) {
+		return -EINVAL;
+	}
+
+	int err = 0;
+	bool enc = false;
+
+	if (obj->enc_src == NRF_CLOUD_ENC_SRC_NONE) {
+		err = nrf_cloud_obj_cloud_encode(obj);
+		if (err) {
+			LOG_ERR("Unable to encode data: %d", err);
+			return err;
+		}
+		enc = true;
+	}
+
+	err = nrf_cloud_coap_post("msg/d2c", NULL, obj->encoded_data.ptr, obj->encoded_data.len,
+				  COAP_CONTENT_FORMAT_APP_CBOR, false, NULL, NULL);
+	if (err) {
+		LOG_ERR("Failed to send POST request: %d", err);
+	}
+
+	if (enc) {
+		nrf_cloud_obj_cloud_encoded_free(obj);
+	}
+
+	return err;
+}
+
 int nrf_cloud_coap_sensor_send(const char *app_id, double value, int64_t ts_ms)
 {
 	__ASSERT_NO_MSG(app_id != NULL);
@@ -196,8 +231,14 @@ int nrf_cloud_coap_message_send(const char *app_id, const char *message, bool js
 	uint8_t buffer[256];
 	size_t len = sizeof(buffer);
 	int err;
+	struct nrf_cloud_obj_coap_cbor msg = {
+		.app_id		= app_id,
+		.type		= NRF_CLOUD_DATA_TYPE_STR,
+		.str_val	= message,
+		.ts		= ts
+	};
 
-	err = coap_codec_message_encode(app_id, message, 0, 0, ts, buffer, &len,
+	err = coap_codec_message_encode(&msg, buffer, &len,
 					json ? COAP_CONTENT_FORMAT_APP_JSON :
 					       COAP_CONTENT_FORMAT_APP_CBOR);
 	if (err) {

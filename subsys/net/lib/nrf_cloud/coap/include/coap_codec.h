@@ -27,9 +27,8 @@
 		LOG_INF("%s " RC_FMT, (msg), RC_PARAM(result_code)); \
 }
 
-int coap_codec_message_encode(const char *app_id,
-			      const char *str_val, double float_val, int int_val,
-			      int64_t ts, uint8_t *buf, size_t *len, enum coap_content_format fmt);
+int coap_codec_message_encode(struct nrf_cloud_obj_coap_cbor *msg, uint8_t *buf, size_t *len,
+			      enum coap_content_format fmt);
 
 int coap_codec_sensor_encode(const char *app_id, double float_val,
 			     int64_t ts, uint8_t *buf, size_t *len,
