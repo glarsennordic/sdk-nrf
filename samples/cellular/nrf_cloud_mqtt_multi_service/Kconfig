@@ -270,11 +270,11 @@ config COAP_FOTA_SETTINGS_KEY_PENDING_JOB
 	  For application-FOTA, this value should also be found in your target application
 	  so that the FOTA status can be properly reported to nRF Cloud.
 
-config COAP_FOTA_USE_THREAD
-	bool "Use a thread to process FOTA in the background"
+config COAP_FOTA_JOB_CHECK_RATE_MINUTES
+	int "FOTA job check interval (minutes)"
+	default 60
 	help
-	  If not enabled, call the handle_fota_process() periodically. Otherwise, a
-	  thread will process based on COAP_FOTA_JOB_CHECK_RATE_MIN.
+	  Sets the time to wait between each request to get any pending FOTA job.
 
 config COAP_FOTA_THREAD_STACK_SIZE
 	int "CoAP FOTA Thread Stack Size (bytes)"
@@ -284,6 +284,21 @@ config COAP_FOTA_THREAD_STACK_SIZE
 	  sample.
 
 endif
+
+config COAP_SHADOW_CHECK_RATE_SECONDS
+	int "Shadow job check interval (seconds)"
+	default 300
+	help
+	  Sets the time to wait between each request to get any change to the
+	  device shadow.
+
+config COAP_SHADOW_THREAD_STACK_SIZE
+	int "CoAP Shadow Thread Stack Size (bytes)"
+	default 2048
+	help
+	  Sets the stack size (in bytes) for the CoAP shadow thread of the
+	  sample.
+
 endif
 
 endmenu

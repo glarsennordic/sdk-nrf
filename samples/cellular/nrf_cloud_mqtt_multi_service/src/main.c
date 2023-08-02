@@ -10,6 +10,8 @@
 #include "cloud_connection.h"
 #include "message_queue.h"
 #include "led_control.h"
+#include "fota_support_coap.h"
+#include "shadow_support_coap.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_MULTI_SERVICE_LOG_LEVEL);
 
@@ -33,12 +35,25 @@ K_THREAD_DEFINE(msg_thread, CONFIG_MESSAGE_THREAD_STACK_SIZE, message_queue_thre
 K_THREAD_DEFINE(con_thread, CONFIG_CONNECTION_THREAD_STACK_SIZE, cloud_connection_thread_fn,
 		NULL, NULL, NULL, 0, 0, 0);
 
+#if defined(CONFIG_NRF_CLOUD_COAP)
+/* Define, and automatically start the CoAP FOTA check thread. See fota_support_coap.c */
+K_THREAD_DEFINE(coap_fota, CONFIG_COAP_FOTA_THREAD_STACK_SIZE, coap_fota_thread_fn,
+		NULL, NULL, NULL, 0, 0, 0);
+
+/* Define, and automatically start the CoAP shadow check thread. See shadow_support_coap.c */
+K_THREAD_DEFINE(coap_shadow, CONFIG_COAP_SHADOW_THREAD_STACK_SIZE, coap_shadow_thread_fn,
+		NULL, NULL, NULL, 0, 0, 0);
+#endif
+
 /* main() is called from the main thread, which defaults to priority zero,
  * but for illustrative purposes we don't use it. main_application() could be called directly
  * from this function, rather than given its own dedicated thread.
  */
 int main(void)
 {
+	LOG_INF("nRF Cloud Multi Service sample has started, version: %s",
+		CONFIG_APP_VERSION);
+
 	const char *protocol;
 
 	if (IS_ENABLED(CONFIG_NRF_CLOUD_MQTT)) {
@@ -47,7 +62,7 @@ int main(void)
 		protocol = "CoAP";
 	}
 
-	LOG_INF("nRF Cloud %s Multi Service sample has started, version: %s",
-		protocol, CONFIG_APP_VERSION);
+	LOG_INF("Connected using %s", protocol);
+
 	return 0;
 }

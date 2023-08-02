@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
@@ -14,9 +14,9 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <net/fota_download.h>
 #include <net/nrf_cloud_coap.h>
-#include "handle_fota.h"
+#include "fota_support_coap.h"
 
-LOG_MODULE_REGISTER(handle_fota, CONFIG_MULTI_SERVICE_LOG_LEVEL);
+LOG_MODULE_REGISTER(fota_support_coap, CONFIG_MULTI_SERVICE_LOG_LEVEL);
 
 #define PENDING_REBOOT_S	10
 #define JOB_WAIT_S		30
@@ -197,7 +197,7 @@ static void process_pending_job(void)
 	}
 }
 
-int handle_fota_init(void)
+int coap_fota_init(void)
 {
 	int err;
 
@@ -233,7 +233,7 @@ int handle_fota_init(void)
 	return err;
 }
 
-int handle_fota_begin(void)
+int coap_fota_begin(void)
 {
 	int err;
 
@@ -285,6 +285,9 @@ static int check_for_job(void)
 	if (err == -ENOMSG) {
 		LOG_INF("No pending FOTA job");
 		return 1;
+	} else if (err == -EACCES) {
+		LOG_INF("Not connected yet.");
+		return err;
 	} else if (err < 0) {
 		LOG_ERR("Failed to fetch FOTA job, error: %d", err);
 		return -ENOENT;
@@ -445,7 +448,7 @@ static void error_reboot(void)
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
-int handle_fota_process(void)
+int coap_fota_process(void)
 {
 	int err;
 
@@ -470,10 +473,8 @@ int handle_fota_process(void)
 		/* No job. Wait for the configured duration or a button press */
 		cleanup();
 
-#if defined(COAP_FOTA_USE_THREAD)
-		LOG_DBG("Retrying in %d minute(s)", CONFIG_COAP_FOTA_JOB_CHECK_RATE_MIN);
-#endif
-		return -ENOENT;
+		LOG_DBG("Retrying in %d minute(s)", CONFIG_COAP_FOTA_JOB_CHECK_RATE_MINUTES);
+		return -EAGAIN;
 	}
 
 	/* Start the FOTA download process and wait for completion (or timeout) */
@@ -508,26 +509,19 @@ int handle_fota_process(void)
 	return err;
 }
 
-#if defined(COAP_FOTA_USE_THREAD)
+#define FOTA_THREAD_DELAY_S 10
 
-#define FOTA_THREAD_DELAY_S 5
-
-static int fota_thread(void)
+int coap_fota_thread_fn(void)
 {
 	int err;
 
 	while (1) {
-		err = coap_fota_handle();
+		err = coap_fota_process();
 		if (err == -EAGAIN) {
-			k_sleep(K_MINUTES(CONFIG_COAP_FOTA_JOB_CHECK_RATE_MIN));
+			k_sleep(K_MINUTES(CONFIG_COAP_FOTA_JOB_CHECK_RATE_MINUTES));
 		} else {
 			k_sleep(K_SECONDS(FOTA_THREAD_DELAY_S));
 		}
 	}
 	return 0;
 }
-
-K_THREAD_DEFINE(coap_fota, CONFIG_COAP_FOTA_THREAD_STACK_SIZE, fota_thread,
-		NULL, NULL, NULL, 0, 0, 0);
-
-#endif /* COAP_FOTA_USE_THREAD */

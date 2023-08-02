@@ -15,7 +15,6 @@
 #include <net/nrf_cloud_alert.h>
 #if defined(CONFIG_NRF_CLOUD_COAP)
 #include <net/nrf_cloud_coap.h>
-#include "handle_fota.h"
 #endif
 
 #include "application.h"
@@ -31,13 +30,11 @@ LOG_MODULE_REGISTER(application, CONFIG_MULTI_SERVICE_LOG_LEVEL);
 /* Timer used to time the sensor sampling rate. */
 static K_TIMER_DEFINE(sensor_sample_timer, NULL, NULL);
 
-#if defined(CONFIG_AT_CMD_REQUESTS)
 /* AT command request error handling */
 #define AT_CMD_REQUEST_ERR_FORMAT "Error while processing AT command request: %d"
 #define AT_CMD_REQUEST_ERR_MAX_LEN (sizeof(AT_CMD_REQUEST_ERR_FORMAT) + 20)
 BUILD_ASSERT(CONFIG_AT_CMD_REQUEST_RESPONSE_BUFFER_LENGTH >= AT_CMD_REQUEST_ERR_MAX_LEN,
 	     "Not enough AT command response buffer for printing error events.");
-#endif /* CONFIG_AT_CMD_REQUESTS */
 
 /* Temperature alert limits. */
 #define TEMP_ALERT_LIMIT ((float)CONFIG_TEMP_ALERT_LIMIT)
@@ -285,39 +282,6 @@ cleanup:
 	(void)nrf_cloud_obj_free(&msg_obj);
 }
 
-#if defined(CONFIG_NRF_CLOUD_COAP)
-static void check_shadow(void)
-{
-	int err;
-	char buf[512];
-
-	buf[0] = '\0';
-	LOG_INF("Checking for shadow delta...");
-	err = nrf_cloud_coap_shadow_get(buf, sizeof(buf), true);
-	if (err) {
-		LOG_ERR("Failed to request shadow delta: %d", err);
-	} else {
-		size_t len = strlen(buf);
-
-		LOG_INF("Delta: len:%zd, %s", len, len ? buf : "None");
-		/* Do something with the shadow delta's JSON data, such
-		 * as parse it and use the decoded information to change a
-		 * behavior.
-		 */
-
-		/* Acknowledge it so we do not receive it again. */
-		if (len) {
-			err = nrf_cloud_coap_shadow_state_update(buf);
-			if (err) {
-				LOG_ERR("Failed to acknowledge delta: %d", err);
-			} else {
-				LOG_INF("Delta acknowledged");
-			}
-		}
-	}
-}
-#endif /* CONFIG_NRF_CLOUD_COAP */
-
 /** @brief Check whether temperature is acceptable.
  * If the device exceeds a temperature limit, send the temperature alert one time.
  * Once the temperature falls below a lower limit, re-enable the temperature alert
@@ -406,15 +370,6 @@ void main_application_thread_fn(void)
 			LOG_INF("Sent test counter = %d", counter);
 			(void)send_sensor_sample("COUNT", counter++);
 		}
-
-#if defined(CONFIG_NRF_CLOUD_COAP)
-#if defined(CONFIG_NRF_CLOUD_COAP_FOTA)
-		if (handle_fota_process() != -EAGAIN) {
-			LOG_INF("FOTA check completed.");
-		}
-#endif /* CONFIG_NRF_CLOUD_COAP_FOTA */
-		check_shadow();
-#endif /* CONFIG_NRF_CLOUD_COAP */
 
 		/* Wait out any remaining time on the sample interval timer. */
 		k_timer_status_sync(&sensor_sample_timer);

@@ -10,9 +10,10 @@
 #include <stdio.h>
 #include <date_time.h>
 #include <net/nrf_cloud.h>
+#include <net/nrf_cloud_log.h>
 #if defined(CONFIG_NRF_CLOUD_COAP)
 #include <net/nrf_cloud_coap.h>
-#include "handle_fota.h"
+#include "fota_support_coap.h"
 #endif
 
 #include "cloud_connection.h"
@@ -216,12 +217,8 @@ static void update_shadow(void)
 	struct nrf_cloud_svc_info_ui ui_info = {
 		.gnss = location_tracking_enabled(),
 		.temperature = IS_ENABLED(CONFIG_TEMP_TRACKING),
-		.log = (IS_ENABLED(CONFIG_NRF_CLOUD_LOG_BACKEND) &&
-		        IS_ENABLED(CONFIG_LOG_BACKEND_NRF_CLOUD_OUTPUT_TEXT)) ||
-		       (IS_ENABLED(CONFIG_NRF_CLOUD_LOG_DIRECT) &&
-			!IS_ENABLED(CONFIG_LOG_BACKEND_NRF_CLOUD_OUTPUT_DICTIONARY)),
-		.dictionary_log = IS_ENABLED(CONFIG_NRF_CLOUD_LOG_BACKEND) &&
-				  IS_ENABLED(CONFIG_LOG_BACKEND_NRF_CLOUD_OUTPUT_DICTIONARY)
+		.log = nrf_cloud_is_text_logging_enabled(),
+		.dictionary_log = nrf_cloud_is_dict_logging_enabled()
 	};
 	struct nrf_cloud_svc_info service_info = {
 		.fota = &fota_info,
@@ -475,14 +472,14 @@ static int setup_cloud(void)
 
 #elif defined(CONFIG_NRF_CLOUD_COAP)
 #if defined(CONFIG_NRF_CLOUD_COAP_FOTA)
-	err = handle_fota_init();
+	err = coap_fota_init();
 	if (err) {
 		LOG_ERR("Error initializing FOTA: %d", err);
 		return err;
 	}
-	err = handle_fota_begin();
+	err = coap_fota_begin();
 	if (err) {
-		LOG_ERR("Error initializing FOTA: %d", err);
+		LOG_ERR("Error starting FOTA: %d", err);
 		return err;
 	}
 #endif /* CONFIG_NRF_CLOUD_COAP_FOTA */

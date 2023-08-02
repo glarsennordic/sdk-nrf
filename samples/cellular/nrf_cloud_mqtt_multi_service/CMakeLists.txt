@@ -20,8 +20,12 @@ target_sources(app PRIVATE src/fota_support.c)
 target_sources(app PRIVATE src/led_control.c)
 target_sources(app PRIVATE src/location_tracking.c)
 
+if(CONFIG_NRF_CLOUD_COAP)
+target_sources(app PRIVATE src/shadow_support_coap.c)
+endif()
+
 if(CONFIG_NRF_CLOUD_COAP_FOTA)
-target_sources(app PRIVATE src/handle_fota.c)
+target_sources(app PRIVATE src/fota_support_coap.c)
 endif()
 
 # Include modem-specific features if supported
