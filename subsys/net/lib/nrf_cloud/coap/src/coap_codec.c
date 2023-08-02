@@ -51,8 +51,9 @@ static int encode_message(struct nrf_cloud_obj_coap_cbor *msg, uint8_t *buf, siz
 		input._message_out_appId.len = strlen(msg->app_id);
 
 		switch (msg->type) {
-		case NRF_CLOUD_DATA_TYPE_BLOCK:
-			break;
+		case NRF_CLOUD_DATA_TYPE_NONE:
+			LOG_ERR("Cannot encode unknown type.");
+			return -EINVAL;
 		case NRF_CLOUD_DATA_TYPE_STR:
 			input._message_out_data_choice = _message_out_data_tstr;
 			input._message_out_data_tstr.value = msg->str_val;

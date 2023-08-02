@@ -175,6 +175,8 @@ int nrf_cloud_obj_msg_init(struct nrf_cloud_obj *const obj, const char *const ap
 			return -ENOMEM;
 		}
 
+		msg->type = NRF_CLOUD_DATA_TYPE_NONE;
+
 		/* Add the app_id */
 		msg->app_id = nrf_cloud_calloc(1, app_id_sz);
 		memcpy(msg->app_id, app_id, app_id_sz);
@@ -447,6 +449,10 @@ int nrf_cloud_obj_num_add(struct nrf_cloud_obj *const obj, const char *const key
 			return -ENOENT;
 		}
 
+		if (obj->coap_cbor->type != NRF_CLOUD_DATA_TYPE_NONE) {
+			return -ENOTEMPTY;
+		}
+
 		if (ceil(val) == val) {
 			obj->coap_cbor->type = NRF_CLOUD_DATA_TYPE_INT;
 			obj->coap_cbor->int_val = (int)val;
@@ -490,17 +496,19 @@ int nrf_cloud_obj_str_add(struct nrf_cloud_obj *const obj, const char *const key
 			return -ENOENT;
 		}
 
-		if (obj->coap_cbor->str_val) {
+		if (obj->coap_cbor->type != NRF_CLOUD_DATA_TYPE_NONE) {
 			return -ENOTEMPTY;
 		}
 
 		size_t str_sz = strlen(val) + 1;
+
 		obj->coap_cbor->str_val = nrf_cloud_calloc(1, str_sz);
 
 		if (!obj->coap_cbor->str_val) {
 			return -ENOMEM;
 		}
 
+		obj->coap_cbor->type = NRF_CLOUD_DATA_TYPE_STR;
 		memcpy(obj->coap_cbor->str_val, val, str_sz);
 
 		return 0;
@@ -673,7 +681,7 @@ int nrf_cloud_obj_cloud_encode(struct nrf_cloud_obj *const obj)
 						&obj->encoded_data.len,
 						COAP_CONTENT_FORMAT_APP_CBOR);
 
-		if(ret) {
+		if (ret) {
 			nrf_cloud_obj_cloud_encoded_free(obj);
 		}
 
@@ -726,7 +734,7 @@ int nrf_cloud_obj_gnss_msg_create(struct nrf_cloud_obj *const obj,
 			goto cleanup;
 		}
 		return nrf_cloud_obj_pvt_add(obj, &gnss->pvt);
-	} else if (obj->type == NRF_CLOUD_OBJ_TYPE_JSON) {
+	} else if (obj->type != NRF_CLOUD_OBJ_TYPE_JSON) {
 		ret = -ENOTSUP;
 		goto cleanup;
 	}
@@ -840,7 +848,7 @@ int nrf_cloud_obj_pvt_add(struct nrf_cloud_obj *const obj,
 			return -ENOENT;
 		}
 
-		if (obj->coap_cbor->pvt) {
+		if (obj->coap_cbor->type != NRF_CLOUD_DATA_TYPE_NONE) {
 			return -ENOTEMPTY;
 		}
 
@@ -850,6 +858,7 @@ int nrf_cloud_obj_pvt_add(struct nrf_cloud_obj *const obj,
 			return -ENOMEM;
 		}
 
+		obj->coap_cbor->type = NRF_CLOUD_DATA_TYPE_PVT;
 		*obj->coap_cbor->pvt = *pvt;
 
 		return 0;

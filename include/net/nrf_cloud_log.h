@@ -99,6 +99,20 @@ void nrf_cloud_log_control_set(int log_level);
  */
 int nrf_cloud_log_control_get(void);
 
+/**
+ * @brief Determine if build is configured for text (JSON) cloud logging.
+ *
+ * @return bool True if build for JSON-based logs. False otherwise.
+ */
+bool nrf_cloud_is_text_logging_enabled(void);
+
+/**
+ * @brief Determine if build is configured for dictionary (binary) logging.
+ *
+ * @return bool True if build for dictionary logs. False otherwise.
+ */
+bool nrf_cloud_is_dict_logging_enabled(void);
+
 #if defined(CONFIG_NRF_CLOUD_LOG_DIRECT)
 #if defined(CONFIG_NRF_CLOUD_MQTT) || defined(CONFIG_NRF_CLOUD_COAP)
 /**

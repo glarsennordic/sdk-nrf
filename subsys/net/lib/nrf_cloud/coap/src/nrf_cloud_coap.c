@@ -79,7 +79,7 @@ int nrf_cloud_coap_agps_data_get(struct nrf_cloud_rest_agps_request const *const
 		return -EACCES;
 	}
 
-	static uint8_t buffer[64];
+	static uint8_t buffer[AGPS_GET_CBOR_MAX_SIZE];
 	size_t len = sizeof(buffer);
 	int err;
 
@@ -132,7 +132,7 @@ int nrf_cloud_coap_pgps_url_get(struct nrf_cloud_rest_pgps_request const *const 
 		return -EACCES;
 	}
 
-	static uint8_t buffer[64];
+	static uint8_t buffer[PGPS_URL_GET_CBOR_MAX_SIZE];
 	size_t len = sizeof(buffer);
 	int err;
 
@@ -202,7 +202,7 @@ int nrf_cloud_coap_sensor_send(const char *app_id, double value, int64_t ts_ms)
 		return -EACCES;
 	}
 	int64_t ts = (ts_ms == NRF_CLOUD_NO_TIMESTAMP) ? get_ts() : ts_ms;
-	static uint8_t buffer[32];
+	static uint8_t buffer[SENSOR_SEND_CBOR_MAX_SIZE];
 	size_t len = sizeof(buffer);
 	int err;
 
@@ -228,13 +228,13 @@ int nrf_cloud_coap_message_send(const char *app_id, const char *message, bool js
 		return -EACCES;
 	}
 	int64_t ts = (ts_ms == NRF_CLOUD_NO_TIMESTAMP) ? get_ts() : ts_ms;
-	uint8_t buffer[256];
+	uint8_t buffer[MESSAGE_SEND_CBOR_MAX_SIZE];
 	size_t len = sizeof(buffer);
 	int err;
 	struct nrf_cloud_obj_coap_cbor msg = {
-		.app_id		= app_id,
+		.app_id		= (char *)app_id,
 		.type		= NRF_CLOUD_DATA_TYPE_STR,
-		.str_val	= message,
+		.str_val	= (char *)message,
 		.ts		= ts
 	};
 
@@ -247,7 +247,7 @@ int nrf_cloud_coap_message_send(const char *app_id, const char *message, bool js
 	}
 	err = nrf_cloud_coap_post("msg/d2c", NULL, buffer, len,
 				  json ? COAP_CONTENT_FORMAT_APP_JSON :
-				         COAP_CONTENT_FORMAT_APP_CBOR,
+					 COAP_CONTENT_FORMAT_APP_CBOR,
 				  false, NULL, NULL);
 	if (err < 0) {
 		LOG_ERR("Failed to send POST request: %d", err);
@@ -283,7 +283,7 @@ int nrf_cloud_coap_location_send(const struct nrf_cloud_gnss_data *gnss)
 		return -EACCES;
 	}
 	int64_t ts = (gnss->ts_ms == NRF_CLOUD_NO_TIMESTAMP) ? get_ts() : gnss->ts_ms;
-	static uint8_t buffer[64];
+	static uint8_t buffer[LOCATION_SEND_CBOR_MAX_SIZE];
 	size_t len = sizeof(buffer);
 	int err;
 
@@ -330,7 +330,7 @@ int nrf_cloud_coap_location_get(struct nrf_cloud_rest_location_request const *co
 	if (!nrf_cloud_coap_is_connected()) {
 		return -EACCES;
 	}
-	static uint8_t buffer[1024];
+	static uint8_t buffer[LOCATION_GET_CBOR_MAX_SIZE];
 	size_t len = sizeof(buffer);
 	int err;
 

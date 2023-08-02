@@ -259,7 +259,7 @@ int nrf_cloud_log_send(int log_level, const char *fmt, ...)
 	}
 	err = nrf_cloud_coap_json_message_send(output.data.ptr);
 	k_sem_give(&ncl_active);
-	nrf_cloud_free(output.data.ptr);
+	nrf_cloud_free((void *)output.data.ptr);
 
 	if (err) {
 		LOG_ERR("Error sending log:%d", err);
@@ -306,3 +306,19 @@ bool nrf_cloud_log_is_enabled(void)
 {
 	return enabled;
 }
+
+bool nrf_cloud_is_text_logging_enabled(void)
+{
+	return (IS_ENABLED(CONFIG_NRF_CLOUD_LOG_BACKEND) &&
+		IS_ENABLED(CONFIG_LOG_BACKEND_NRF_CLOUD_OUTPUT_TEXT)) ||
+		(IS_ENABLED(CONFIG_NRF_CLOUD_LOG_DIRECT) &&
+		 !IS_ENABLED(CONFIG_LOG_BACKEND_NRF_CLOUD_OUTPUT_DICTIONARY));
+}
+
+bool nrf_cloud_is_dict_logging_enabled(void)
+{
+	return IS_ENABLED(CONFIG_NRF_CLOUD_LOG_BACKEND) &&
+	       IS_ENABLED(CONFIG_LOG_BACKEND_NRF_CLOUD_OUTPUT_DICTIONARY);
+}
+
+

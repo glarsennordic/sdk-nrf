@@ -34,6 +34,9 @@ enum nrf_cloud_obj_type {
 	NRF_CLOUD_OBJ_TYPE__UNDEFINED,
 
 	NRF_CLOUD_OBJ_TYPE_JSON,
+	/** This object type is to be used to store only one of enum nrf_cloud_data_type
+	 *  using the corresponding field in the union in struct nrf_cloud_obj_coap_cbor.
+	 */
 	NRF_CLOUD_OBJ_TYPE_COAP_CBOR,
 
 	NRF_CLOUD_OBJ_TYPE__LAST,
@@ -51,10 +54,8 @@ enum nrf_cloud_enc_src {
 
 /** @brief Data types for nrf_cloud_sensor_data. */
 enum nrf_cloud_data_type {
-	/** The struct nrf_cloud_data structure points to the data and indicates its
-	 *  length. The contents of the block are identified with the enum nrf_cloud_sensor type.
-	 */
-	NRF_CLOUD_DATA_TYPE_BLOCK,
+	NRF_CLOUD_DATA_TYPE_NONE,
+	/** The struct nrf_cloud_gnss_pvt *pvt field points to the data. */
 	NRF_CLOUD_DATA_TYPE_PVT,
 	/** The const char *str_val field points to a NULL-terminated string. */
 	NRF_CLOUD_DATA_TYPE_STR,
@@ -67,6 +68,7 @@ enum nrf_cloud_data_type {
 /** @brief Object to support nRF Cloud CoAP CBOR messages */
 struct nrf_cloud_obj_coap_cbor {
 	char *app_id;
+	/** type indicates which one of the fields in the union is valid. */
 	enum nrf_cloud_data_type type;
 	union {
 		struct nrf_cloud_data data;

@@ -277,10 +277,10 @@ int nrf_cloud_coap_shadow_service_info_update(const struct nrf_cloud_svc_info * 
 
 /**
  * @brief Send an nRF Cloud Object
- * 
+ *
  * @param[in]     obj An nRF Cloud object. Will be encoded first if obj->enc_src is
  * NRF_CLOUD_ENC_SRC_NONE.
- * 
+ *
  * @return 0 if the request succeeded, a positive value indicating a CoAP result code,
  * or a negative error number.
  */
