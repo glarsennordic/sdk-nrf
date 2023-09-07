@@ -645,6 +645,25 @@ int nrf_cloud_error_msg_decode(const char * const buf,
 			       const char * const msg_type,
 			       enum nrf_cloud_error * const err);
 
+/**
+ *  @brief Convert input shadow delta to output shadow reported or desired.
+ *
+ *  When accepting, the input_obj shadow fragment should contain the same
+ *  values as the desired values.
+ *
+ *  When rejecting, the input_obj shadow_fragment should contain the previously
+ *  valid values for any invalid values received in the desired section.
+ *
+ *  @param[in]  input_obj  Shadow fragment to encode for sending.
+ *  @param[in]  accept     Flag to indicate whether to accept (place in reported section) or reject
+ *                         (place in desired section).
+ *  @param[out] output     Pointer to and length of a buffer containing the JSON-formatted
+ *                         text to send.
+ */
+int nrf_cloud_shadow_delta_response_encode(cJSON *input_obj,
+					   bool accept,
+					   struct nrf_cloud_data *const output);
+
 /** @} */
 
 #ifdef __cplusplus
